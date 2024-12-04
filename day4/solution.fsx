@@ -1,7 +1,4 @@
-﻿open System
-open System.Text.RegularExpressions
-
-let cols<'a> (rows: 'a array array) =
+﻿let cols<'a> (rows: 'a array array) =
     rows[0] |> Array.mapi (fun i _ -> rows |> Array.map (fun row -> row[i]))
 
 let diags (rows: 'a array array) =
@@ -33,13 +30,22 @@ let lines input =
 
     Array.concat [| originals; reversed |]
 
-
-let myDiags =
+let noOfXmas =
     input
     |> lines
-    |> Array.map (String >> fun x -> Regex.Count(x, "XMAS"))
-    |> Array.sum
+    |> Array.collect(
+        Array.windowed 4
+        >> Array.choose (
+            function
+            | [|'X';'M';'A';'S'|] -> Some true
+            | _ -> None
+            )
+        )
+    |> Array.filter id
+    |> Array.length
+ 
 
+printfn $"Found xmas {noOfXmas} times"
 
 let isMas (posX, posY) (grid: char array array) =
     match grid[posX][posY] with
@@ -55,11 +61,13 @@ let isMas (posX, posY) (grid: char array array) =
 
     | _ -> false
 
+let numberOfTrueXmas =
+    input
+    |> (fun cols ->
+        [ for x in [ 1 .. (cols.Length - 2) ] do
+              for y in [ 1 .. (cols[1].Length - 2) ] do
+                  isMas (x, y) cols ])
+    |> List.filter id
+    |> List.length
 
-input
-|> cols
-|> (fun cols ->
-    [ for x in [ 1 .. (cols.Length - 2) ] do
-          for y in [ 1 .. (cols[1].Length - 2) ] do
-              isMas (x, y) cols ])
-|> List.countBy id
+printfn $"found {numberOfTrueXmas} true xmasses"
