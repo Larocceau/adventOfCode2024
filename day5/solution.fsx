@@ -48,7 +48,6 @@ module PuzzleInput =
         
 
 module OrderRule =
-    
     let followingMap values =
         values
         |> List.groupBy fst
@@ -75,11 +74,36 @@ module Update =
                 preceding |> List.forall (fun v ->not (List.contains v mustFollow))
             | None -> true
             )
+        
+    let sort (followingMap: Map<int, int list>) (update: int list) =
+        
+        let startIndex = (update.Length - 1)
+        let rec myFun (ordering: int list) i =
+            match i with
+            | 0 -> ordering
+            | n ->
+                let (preceding, following) =
+                    List.splitAt n ordering
+                let shouldFollow =
+                    followingMap |> Map.tryFind ordering[i] |> Option.defaultValue []
+                    |> List.filter(fun x -> List.contains x preceding)
+                
+                match shouldFollow with
+                | [] -> myFun ordering (i-1)
+                | items ->
+                    let newPreceding = preceding |> List.filter(fun x -> List.contains x items |> not)
+                    myFun [ yield! newPreceding; yield! following; yield! items] startIndex
+        
+        myFun update startIndex
 
-
-let solveDay1  input =
+let middleSum = List.map(fun (x: int list) -> x[x.Length/2]) >> List.sum
+let solvePart1  input =
     let map = OrderRule.followingMap input.OrderRules
-    input.Updates |> List.filter (Update.isCorrect map) |> List.map(fun x -> x[x.Length/2]) |> List.sum
+    input.Updates |> List.filter (Update.isCorrect map) |> middleSum
+    
+let solvePart2 input =
+    let map = OrderRule.followingMap input.OrderRules
+    input.Updates |> List.filter (Update.isCorrect map >> not) |> List.map( Update.sort map) |> middleSum
     
 let puzzleInput =
     "day5/input.txt"
@@ -87,4 +111,6 @@ let puzzleInput =
     |> List.ofArray
     |> PuzzleInput.parse
     
-solveDay1 puzzleInput
+
+printfn $"The result of part one is {solvePart1 puzzleInput}"
+printfn $"The result of part two is {solvePart2 puzzleInput}"
