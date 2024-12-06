@@ -1,14 +1,17 @@
-﻿type Direction =
+﻿open System.Diagnostics
+
+type Direction =
     | North
     | East
     | South
     | West
 
-type GuardState =
+type Guard =
     { Position: int * int
       Direction: Direction }
 
-let parse (data: string array) =
+type Map = bool array array
+let parse (data: string array): (Map* Guard)=
     let map =
         data
         |> Array.map (
@@ -44,42 +47,68 @@ module Map =
         with :? System.IndexOutOfRangeException ->
             None
 
-module GuardState =
-    let tryNext map state =
+module Guard =
+    let tryMove map guard =
         let newPos =
-            let currentPos = state.Position
+            let x,y = guard.Position
 
-            match state.Direction with
-            | North -> (fst currentPos - 1), (snd currentPos)
-            | East -> (fst currentPos), (snd currentPos + 1)
-            | South -> (fst currentPos + 1), (snd currentPos)
-            | West -> (fst currentPos), (snd currentPos - 1)
+            match guard.Direction with
+            | North -> (x - 1), y
+            | East -> x, (y + 1)
+            | South -> (x + 1), y
+            | West -> x, (y - 1)
 
         Map.tryIsBlocked map newPos
         |> Option.map (fun nextPosIsBlocked ->
             if nextPosIsBlocked then
-                { state with
-                    Direction = Direction.rotate state.Direction }
+                { guard with
+                    Direction = Direction.rotate guard.Direction }
             else
-                { state with Position = newPos })
-
-
+                { guard with Position = newPos })
+    
+    let loops map =
+        
+        let rec implementation previousStates state =
+            match tryMove map state with
+            | None -> false
+            | Some nextState ->
+                if (previousStates |> List.contains nextState) then
+                    true
+                else implementation (state :: previousStates) nextState
+        
+        implementation [] 
+        
 let solveDay1 map guardState =
-    let positionsVisited =
-        Seq.unfold (GuardState.tryNext map >> Option.map(fun s -> (s.Position,s))) guardState
+    let positions =
+        List.unfold (Guard.tryMove map >> Option.map(fun s -> (s.Position,s))) guardState
     
-    printfn $"Positions visited: %A{positionsVisited |> List.ofSeq}"
     
-    let noOfPositionsVisited =
-        positionsVisited
-        |> Set.ofSeq
-        |> Set.count
+    printfn $"Positions visited: %A{positions}"
     
-    printfn $"The guard visited {noOfPositionsVisited} locations"
+    let uniquePositions = positions |> List.distinct
     
+    printfn $"The guard visited {uniquePositions |> List.length} unique locations"
+    
+    let mapsWithLoops =
+        uniquePositions
+        |> List.map(
+            fun ( x, y)->
+                Array.updateAt x
+                    (Array.updateAt y true map[x])
+                    map
+                )
+        |> List.filter( fun map ->
+            Guard.loops map guardState)
+        
+    printfn $"There are {mapsWithLoops.Length} maps with loops"
+
 let map, state=
-    "day6/input.txt"
+    "day6/generated.txt"
     |> System.IO.File.ReadAllLines
     |> parse
 
+let sw = Stopwatch()
+sw.Start()
 solveDay1 map state
+sw.Stop()
+printfn $"spent {sw.Elapsed.TotalSeconds} seconds on part 1"
