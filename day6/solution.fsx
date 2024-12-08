@@ -11,7 +11,8 @@ type Guard =
       Direction: Direction }
 
 type Map = bool array array
-let parse (data: string array): (Map* Guard)=
+
+let parse (data: string array) : (Map * Guard) =
     let map =
         data
         |> Array.map (
@@ -42,15 +43,15 @@ module Direction =
 
 module Map =
     let tryIsBlocked (map: bool array array) (x, y) =
-        try
+        if x >= 0 && x < map.Length && y >= 0 && y < map[0].Length then
             Some(map[x][y])
-        with :? System.IndexOutOfRangeException ->
+        else
             None
 
 module Guard =
     let tryMove map guard =
         let newPos =
-            let x,y = guard.Position
+            let x, y = guard.Position
 
             match guard.Direction with
             | North -> (x - 1), y
@@ -65,47 +66,39 @@ module Guard =
                     Direction = Direction.rotate guard.Direction }
             else
                 { guard with Position = newPos })
-    
+
     let loops map =
-        
+
         let rec implementation previousStates state =
             match tryMove map state with
             | None -> false
             | Some nextState ->
                 if (previousStates |> List.contains nextState) then
                     true
-                else implementation (state :: previousStates) nextState
-        
-        implementation [] 
-        
+                else
+                    implementation (state :: previousStates) nextState
+
+        implementation []
+
 let solveDay1 map guardState =
     let positions =
-        List.unfold (Guard.tryMove map >> Option.map(fun s -> (s.Position,s))) guardState
-    
-    
+        List.unfold (Guard.tryMove map >> Option.map (fun s -> (s.Position, s))) guardState
+
+
     printfn $"Positions visited: %A{positions}"
-    
+
     let uniquePositions = positions |> List.distinct
-    
+
     printfn $"The guard visited {uniquePositions |> List.length} unique locations"
-    
+
     let mapsWithLoops =
         uniquePositions
-        |> List.map(
-            fun ( x, y)->
-                Array.updateAt x
-                    (Array.updateAt y true map[x])
-                    map
-                )
-        |> List.filter( fun map ->
-            Guard.loops map guardState)
-        
+        |> List.map (fun (x, y) -> Array.updateAt x (Array.updateAt y true map[x]) map)
+        |> List.filter (fun map -> Guard.loops map guardState)
+
     printfn $"There are {mapsWithLoops.Length} maps with loops"
 
-let map, state=
-    "day6/generated.txt"
-    |> System.IO.File.ReadAllLines
-    |> parse
+let map, state = "day6/sampleInput.txt" |> System.IO.File.ReadAllLines |> parse
 
 let sw = Stopwatch()
 sw.Start()
