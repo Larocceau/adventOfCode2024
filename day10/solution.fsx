@@ -54,6 +54,12 @@ let rec leadsToNine (locations: Map<_,_>) coord =
     | {Next = nextLocations } -> 
         nextLocations |> List.map (leadsToNine locations) |> List.concat
 
+let rec routesToNine (locations: Map<_,_>) coord =
+    match locations[coord] with
+    | {Value = 9 } -> 1
+    | {Next = []} -> 0
+    | {Next = nextLocations } -> 
+        nextLocations |> List.sumBy (routesToNine locations) 
 
 
 let data =
@@ -63,11 +69,19 @@ let data =
     |> toLocations
     |> Map.ofArray
 
-let part1Solution =
+let zeros =
     data 
     |> Map.filter (fun _ v -> v.Value = 0 ) 
     |> Map.keys
+let part1Solution =
+    zeros
     |> Seq.sumBy (leadsToNine data >> List.distinct >> List.length)
     
 
 printfn $"Solution part 1 %A{part1Solution}"
+
+let part2Solution =
+    zeros
+    |> Seq.sumBy(leadsToNine data>>List.sumBy(routesToNine data))
+
+printfn $"Solution part 2 %A{part1Solution}"
