@@ -21,12 +21,12 @@ let diags (rows: 'a array array) =
 
 
 let input =
-    "day4/input.txt" |> System.IO.File.ReadAllLines |> Array.map (_.ToCharArray())
+    "day4/input.txt" |> System.IO.File.ReadAllLines |> Array.map _.ToCharArray()
 
 let lines input =
     let diag1, diag2 = diags input
     let originals = Array.concat [| input; cols input; diag1; diag2 |]
-    let reversed = originals |> Array.map (Array.rev)
+    let reversed = originals |> Array.map Array.rev
 
     Array.concat [| originals; reversed |]
 
