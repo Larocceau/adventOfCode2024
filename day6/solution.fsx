@@ -90,12 +90,17 @@ let solveDay1 map guardState =
     let uniquePositions = positions |> List.distinct
 
     printfn $"The guard visited {uniquePositions |> List.length} unique locations"
+    
+    let sw  = Stopwatch()
+    sw.Start()
 
     let mapsWithLoops =
         uniquePositions
         |> List.map (fun (x, y) -> Array.updateAt x (Array.updateAt y true map[x]) map)
         |> List.filter (fun map -> Guard.loops map guardState)
 
+    sw.Stop()
+    printfn $"spent {sw.Elapsed.TotalSeconds} seconds on part 2"
     printfn $"There are {mapsWithLoops.Length} maps with loops"
 
 let map, state = "day6/input.txt" |> System.IO.File.ReadAllLines |> parse
