@@ -73,12 +73,12 @@ module Guard =
             match tryMove map state with
             | None -> false
             | Some nextState ->
-                if (previousStates |> List.contains nextState) then
+                if (previousStates |> Set.contains nextState) then
                     true
                 else
-                    implementation (state :: previousStates) nextState
+                    implementation (Set.add state previousStates) nextState
 
-        implementation []
+        implementation Set.empty
 
 let solveDay1 map guardState =
     let positions =
