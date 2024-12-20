@@ -98,7 +98,7 @@ let solveDay1 map guardState =
 
     printfn $"There are {mapsWithLoops.Length} maps with loops"
 
-let map, state = "day6/sampleInput.txt" |> System.IO.File.ReadAllLines |> parse
+let map, state = "day6/input.txt" |> System.IO.File.ReadAllLines |> parse
 
 let sw = Stopwatch()
 sw.Start()
