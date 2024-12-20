@@ -105,8 +105,5 @@ let solveDay1 map guardState =
 
 let map, state = "day6/input.txt" |> System.IO.File.ReadAllLines |> parse
 
-let sw = Stopwatch()
-sw.Start()
+
 solveDay1 map state
-sw.Stop()
-printfn $"spent {sw.Elapsed.TotalSeconds} seconds on part 1"
