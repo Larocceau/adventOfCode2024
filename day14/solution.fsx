@@ -1,6 +1,9 @@
 ﻿open System
-open System.Diagnostics
 open System.Text.RegularExpressions
+
+let tee  f x =
+    f x
+    x
 
 type Robot = {
     Velocity: int * int
@@ -10,7 +13,7 @@ type Robot = {
 let rollOver v maxV =
     if v < 0 then
         maxV + v
-    elif v > maxV then
+    elif v >= maxV then
         v - maxV
     else
         v
@@ -54,18 +57,68 @@ let quadrant maxX maxY position=
     | 1, 1 -> Some Rb
     | _ -> None
 
+let visualise maxX maxY robots =
+    let positionCount = robots |> Array.countBy _.Position |> Map.ofArray
+    [| 0..maxY-1|]
+    |> Array.map(fun y ->
+            [0..maxX-1]
+            |> List.map(fun x ->
+                Map.tryFind (x, y) positionCount  |> Option.map string |> Option.defaultValue "."
+                )
+            |> String.concat ""
+            
+        )
+   
+            
+let print maxX maxY robots =
+    visualise maxX maxY robots
+    |> Array.iter (fun str -> printfn $"{str}")
+    
+    printfn ""
+    
+
+let findSymmetrical=
+    let rec implementation index width height data = 
+        let half = (width / 2)
+        let newState = Array.map (handleTick width height) data
+        
+        let left, right =
+            newState
+            |> Array.map _.Position
+            |> Array.filter (fun (x,_ ) -> x <> half)
+            |> Array.partition (fun (x, _) -> x < half)
+        
+        let leftRigtified =
+            left
+            |> Array.map(
+                fun (x, y) ->
+                    let x = half + (half - x)
+                    (x, y)
+                )
+            |> Array.sort
+        
+        if leftRigtified = (right |> Array.sort) then
+            newState
+        else
+            implementation (index + 1) width height newState 
+    implementation 0
+    
+let file, width, height =
+    System.IO.File.ReadAllLines "day14/input.txt", 101, 103
+
 let data =
-    System.IO.File.ReadAllLines "day14/sampleInput.txt"
+    file
     |> Array.map(parseLine)
-    |> Array.map(applyN 100 (handleTick 11 7))
-    |> Array.countBy(_.Position >> quadrant 11 7)
+    |> tee (print width height)
+
+let part1 =
+    data
+    |> Array.map(applyN 100 (handleTick width height))
+    |> tee (print width height)
+    |> Array.countBy(_.Position >> quadrant width height)
     |> Array.choose (fun (k, v) -> k |> Option.map(fun _ -> v))
     |> Array.reduce (*)
     
-    
-    
-    
-let sw = Stopwatch()
 
-sw.Start()
-let (myFun:string -> string) = applyN 5000 id
+
+let sym = findSymmetrical width height data
